@@ -51,9 +51,23 @@ func main() {
 	)
 
 	flag.Usage = func() { fmt.Print(usage) }
-	flag.Parse()
 
-	if flag.NArg() == 0 {
+	// Go's flag package stops at the first non-flag arg, so separate
+	// positional args from flags before parsing to allow any order.
+	var flagArgs, posArgs []string
+	for _, a := range os.Args[1:] {
+		if strings.HasPrefix(a, "-") {
+			flagArgs = append(flagArgs, a)
+		} else {
+			posArgs = append(posArgs, a)
+		}
+	}
+	if err := flag.CommandLine.Parse(flagArgs); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	if len(posArgs) == 0 {
 		fmt.Print(usage)
 		os.Exit(1)
 	}
@@ -63,7 +77,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	target := flag.Arg(0)
+	target := posArgs[0]
 	if !strings.HasPrefix(target, "http") {
 		target = "http://" + target
 	}
