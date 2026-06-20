@@ -22,13 +22,20 @@ func injectCanary(c *httpClient, api apiVersion, tenant, database string, cols [
 	addPath := collectionPath(api, tenant, database, col.ID, "add")
 	delPath := collectionPath(api, tenant, database, col.ID, "delete")
 
+	// Build zero vector matching collection dimension (or dim=3 if null).
+	// ChromaDB v1.0.0 requires embeddings to be [][]float64, not null.
+	dim := 3
+	if col.Dimension != nil && *col.Dimension > 0 {
+		dim = *col.Dimension
+	}
+	vec := make([]float64, dim)
 	addBody := chromaAddRequest{
 		IDs:       []string{canaryID},
 		Documents: []string{"nuclide-security-canary"},
 		Metadatas: []map[string]interface{}{
 			{"source": "nuclide-recon"},
 		},
-		Embeddings: nil,
+		Embeddings: [][]float64{vec},
 	}
 
 	if _, err := c.post(addPath, addBody, nil); err != nil {

@@ -47,7 +47,7 @@ type chromaAddRequest struct {
 	IDs        []string                 `json:"ids"`
 	Documents  []string                 `json:"documents"`
 	Metadatas  []map[string]interface{} `json:"metadatas"`
-	Embeddings interface{}              `json:"embeddings"`
+	Embeddings [][]float64              `json:"embeddings"`
 }
 
 // chromaDeleteRequest is the body for POST .../delete (canary cleanup)
