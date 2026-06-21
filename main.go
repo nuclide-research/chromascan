@@ -52,19 +52,24 @@ func main() {
 
 	flag.Usage = func() { fmt.Print(usage) }
 
-	// Go's flag package stops at the first non-flag arg, so separate
-	// positional args from flags before parsing to allow any order.
-	var flagArgs, posArgs []string
-	for _, a := range os.Args[1:] {
-		if strings.HasPrefix(a, "-") {
-			flagArgs = append(flagArgs, a)
-		} else {
-			posArgs = append(posArgs, a)
+	// Go's flag package stops at the first non-flag arg, so flags written
+	// after the target would be ignored. Reparse iteratively: parse flags,
+	// take the first leftover positional, then reparse the rest. This keeps
+	// value flags paired with their value ("-o file"), which a naive
+	// dash-prefix split would break.
+	var posArgs []string
+	rest := os.Args[1:]
+	for {
+		if err := flag.CommandLine.Parse(rest); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
 		}
-	}
-	if err := flag.CommandLine.Parse(flagArgs); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		leftover := flag.Args()
+		if len(leftover) == 0 {
+			break
+		}
+		posArgs = append(posArgs, leftover[0])
+		rest = leftover[1:]
 	}
 
 	if len(posArgs) == 0 {
